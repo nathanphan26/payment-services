@@ -1,7 +1,11 @@
 const friendRequestsModel = require('../models/friendRequests.js');
 
-const friendRequestUtils = require('../utils/friendRequestUtils.js');
 const { sendSuccessResponse, sendErrorResponse } = require('../utils/responseUtils.js');
+const { 
+    validateGetRequestForUserById, 
+    validateSendRequestForUserFields, 
+    validateSendRequestForUser,
+    validateAcceptRequestForUser } = require('../validators/friendRequestValidator.js');
 
 // GET PENDING OUTGOING FRIEND REQUESTS
 const getRequestsForUser = (req, res) => {
@@ -16,17 +20,10 @@ const getRequestsForUser = (req, res) => {
 const getRequestForUserById = (req, res) => {
     const { userId, requestId } = req.params;
     
-    // Check Prior Request
-    friendRequestUtils.findExistingRequestById(requestId)
+    validateGetRequestForUserById(requestId, userId)
         .then((results) => {
-            // Check if Request Exists
-            if (results.length === 0) {
-                sendErrorResponse(res, 'Request does not exist...', null, 400);
-                return;
-            }
-            // Check permissions
-            if (results[0].to_user !== userId) {
-                sendErrorResponse(res, 'You do not have permission for this request...', null, 400);
+            if (results !== '') {
+                sendErrorResponse(res, results, null, 400);
                 return;
             }
 
@@ -42,22 +39,20 @@ const sendRequestForUser = (req, res) => {
     const { userId } = req.params;
     const { body } = req;
 
-    // Check Fields
-    if (!body.to_user) {
+    // Validate Fields
+    if (!validateSendRequestForUserFields(body)) {
         sendErrorResponse(res, 'Recepient Required...', null, 400);
         return;
     }
 
-    // Check Prior Requests
-    friendRequestUtils.findExistingRequestByUsers(userId, body.to_user)
+    // Validate Request
+    validateSendRequestForUser(userId, body.to_user)
         .then((results) => {
-            // Check if Request Already Exists
-            if (results.length > 0) {
-                // Check if Request Has Been Accepted
-                if (results[0].accepted == 1) sendErrorResponse(res, 'You are already friends with this user...', null, 400);
-                if (results[0].accepted == 0) sendErrorResponse(res, 'You are already have a pending request with this user...', null, 400);
-                return;
-            }
+            // Already Friends
+            if (results === 0) sendErrorResponse(res, 'You are already friends with this user...', null, 400);
+            // Pending Request
+            if (results === 1) sendErrorResponse(res, 'You are already have a pending request with this user...', null, 400);
+            if (results !== -1) return;
 
             // Create Request
             const friendRequest = new friendRequestsModel({...body, from_user: userId});
@@ -71,29 +66,21 @@ const sendRequestForUser = (req, res) => {
 const acceptRequestForUser = (req, res) => {
     const { userId, requestId } = req.params;
 
-    // Check Prior Request
-    friendRequestUtils.findExistingRequestById(requestId)
+    // Validate Request
+    validateAcceptRequestForUser(requestId, userId)
         .then((results) => {
-            // Check if Request Exists
-            if (results.length === 0) {
-                sendErrorResponse(res, 'Request does not exist...', null, 400);
-                return;
-            }
-            // Check if Request Already Accepted
-            if (results[0].accepted) {
-                sendErrorResponse(res, 'Request already accepted...', null, 400);
-                return;
-            }
-            // Check permissions
-            if (results[0].to_user !== userId) {
-                sendErrorResponse(res, 'You do not have permission for this request...', null, 400);
-                return;
-            }
+            // Request Does Not Exist
+            if (results === 0) sendErrorResponse(res, 'Request does not exist...', null, 400);
+            // Request Already Accepted
+            if (results === 1) sendErrorResponse(res, 'Request already accepted...', null, 400);
+            // User Does Not Have Access to Request
+            if (results === 2) sendErrorResponse(res, 'You do not have permission for this request...', null, 400);
+            if (results !== -1) return;
 
             // Accept Request
             friendRequestsModel.acceptRequestForUser(parseInt(userId), parseInt(requestId))
                 .then((results) => sendSuccessResponse(res, 'Friend Request Accepted...', results, 200))
-                .catch((err) => sendErrorResponse(res, err, null, 400));
+                .catch((err) => sendErrorResponse(res, err, null, 400));            
         })
         .catch((err) => sendErrorResponse(res, err, null, 400));
 }
