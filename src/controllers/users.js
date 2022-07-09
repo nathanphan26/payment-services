@@ -14,16 +14,35 @@ const createUser = (req, res) => {
     const { body } = req;
 
     // Check Fields
-    if (!body.first_name) sendErrorResponse(res, 'First Name is Required...', null, 400)
-    if (!body.last_name) sendErrorResponse(res, 'Last Name is Required...', null, 400)
-    if (!body.username) sendErrorResponse(res, 'Username is Required...', null, 400)
-
+    let fieldErrors = false;
+    let numOfErrors = 0;
+    let fieldErrorMessage = '';
+    if (!body.first_name) {
+        fieldErrors = true;
+        numOfErrors++;
+        fieldErrorMessage = fieldErrorMessage + 'First Name, ';
+    }
+    if (!body.last_name) {
+        fieldErrors = true;
+        numOfErrors++;
+        fieldErrorMessage = fieldErrorMessage + 'Last Name, ';
+    }
+    if (!body.username) {
+        fieldErrors = true;
+        numOfErrors++;
+        fieldErrorMessage = fieldErrorMessage + 'Username';
+    }
+    if (fieldErrors) {
+        sendErrorResponse(res, `${fieldErrorMessage} ${numOfErrors > 1 ? 'are' : 'is'} Required...`, null, 400)
+        return;
+    }
+    
     const user = new userModel(req.body);
 
     userModel.createUser(user)
         .then((results) => sendSuccessResponse(res, 'User Created Successfully...', results, 200))
         .catch((err) => sendErrorResponse(res, err, null, 400));
-}
+} 
 
 // GET USER BY ID
 const getUserById = (req, res) => {
