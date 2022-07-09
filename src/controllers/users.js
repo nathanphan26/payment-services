@@ -1,6 +1,9 @@
 const userModel = require('../models/users.js');
 
+const { validateCreateUser } = require('../validators/usersValidator.js');
+
 const { sendSuccessResponse, sendErrorResponse } = require('../utils/responseUtils.js');
+
 
 // GET ALL USERS
 const getUsers = (req, res) => {
@@ -12,33 +15,15 @@ const getUsers = (req, res) => {
 // CREATE USER
 const createUser = (req, res) => {
     const { body } = req;
+    const [ isValid, errorMessage ] = validateCreateUser(body);
 
-    // Check Fields
-    let fieldErrors = false;
-    let numOfErrors = 0;
-    let fieldErrorMessage = '';
-    if (!body.first_name) {
-        fieldErrors = true;
-        numOfErrors++;
-        fieldErrorMessage = fieldErrorMessage + 'First Name, ';
-    }
-    if (!body.last_name) {
-        fieldErrors = true;
-        numOfErrors++;
-        fieldErrorMessage = fieldErrorMessage + 'Last Name, ';
-    }
-    if (!body.username) {
-        fieldErrors = true;
-        numOfErrors++;
-        fieldErrorMessage = fieldErrorMessage + 'Username';
-    }
-    if (fieldErrors) {
-        sendErrorResponse(res, `${fieldErrorMessage} ${numOfErrors > 1 ? 'are' : 'is'} Required...`, null, 400)
+    if (!isValid) {
+        sendErrorResponse(res, errorMessage, null, 400);
         return;
     }
     
     const user = new userModel(req.body);
-
+    
     userModel.createUser(user)
         .then((results) => sendSuccessResponse(res, 'User Created Successfully...', results, 201))
         .catch((err) => sendErrorResponse(res, err, null, 400));

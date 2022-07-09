@@ -1,21 +1,18 @@
 const friendRequestUtils = require('../utils/friendRequestUtils.js');
 
+// Key
+// -1 = valid
+//  0 = Request Does Not Exist
+//  1 = User Does Not Have Access to Request
 const validateGetRequestForUserById = (requestId, userId) => {
     requestId = parseInt(requestId);
     userId = parseInt(userId);
 
     return friendRequestUtils.findExistingRequestById(requestId)
         .then((results) => {
-            // Check if Request Exists
-            if (results.length === 0) {
-                return 'Request does not exist...';
-            }
-            // Check permissions
-            if (results[0].to_user !== userId) {
-                return 'You do not have permission for this request...';
-            }
-
-            return '';
+            if (results.length === 0) return 0;
+            if (results[0].to_user !== userId) return 1;
+            return -1;
         })
         .catch((err) => {
             return err;

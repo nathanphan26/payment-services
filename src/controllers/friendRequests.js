@@ -22,10 +22,9 @@ const getRequestForUserById = (req, res) => {
     
     validateGetRequestForUserById(requestId, userId)
         .then((results) => {
-            if (results !== '') {
-                sendErrorResponse(res, results, null, 400);
-                return;
-            }
+            if (results === 0) sendErrorResponse(res, 'Request Does Not Exist...', null, 400);
+            if (results === 1) sendErrorResponse(res, 'You do not have permission for this request', null, 400);
+            if (results !== -1) return;
 
             // Get Request
             friendRequestsModel.getRequestForUserById(userId, requestId)
