@@ -40,7 +40,7 @@ const createUser = (req, res) => {
     const user = new userModel(req.body);
 
     userModel.createUser(user)
-        .then((results) => sendSuccessResponse(res, 'User Created Successfully...', results, 200))
+        .then((results) => sendSuccessResponse(res, 'User Created Successfully...', results, 201))
         .catch((err) => sendErrorResponse(res, err, null, 400));
 } 
 

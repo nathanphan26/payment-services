@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const conn = require('../../config/database.js');
 
+const { sendSuccessResponse, sendErrorResponse } = require('../utils/responseUtils.js');
+
 router.post('/createDB', (req, res) => {
     const createDBPromise = new Promise((resolve, reject) => {
         conn.query('CREATE DATABASE payment_service', (err, results) => {
@@ -11,11 +13,8 @@ router.post('/createDB', (req, res) => {
     });
 
     createDBPromise
-        .then((results) => {
-            res.send({success: true, data: results});
-        }).catch((err) => {
-            res.send({success: false, message: err});
-        });
+        .then((results) => sendSuccessResponse(res, null, results, 200))
+        .catch((err) => sendErrorResponse(res, err, null, 400));
 });
 
 router.post('/createTables', (req, res) => {
@@ -95,11 +94,8 @@ router.post('/createTables', (req, res) => {
     });
 
     createTablesPromimse
-        .then((results) => {
-            res.send({success: true, data: results});
-        }).catch((err) => {
-            res.send({success: false, message: err});
-        });
+        .then((results) => sendSuccessResponse(res, null, results, 200))
+        .catch((err) => sendErrorResponse(res, err, null, 400));
 });
 
 module.exports = router;
