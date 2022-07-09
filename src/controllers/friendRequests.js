@@ -18,12 +18,30 @@ const getRequestsForUser = (req, res) => {
 
 const getRequestForUserById = (req, res) => {
     const { userId, requestId } = req.params;
-    // Layer of validation userId and requestId
-
-    friendRequestsModel.getRequestForUserById(userId, requestId)
+    
+    // Check Prior Request
+    friendRequestUtils.findExistingRequestById(requestId)
         .then((results) => {
-            res.send({success: true, data: results});
-        }).catch((err) => {
+            // Check if Request Exists
+            if (results.length === 0) {
+                res.send({success: false, message: 'Request does not exist...'});
+                return;
+            }
+            // Check permissions
+            if (results[0].to_user !== userId) {
+                res.send({success: false, message: 'You do not have permission for this request...'});
+                return;
+            }
+
+            // Get Request
+            friendRequestsModel.getRequestForUserById(userId, requestId)
+                .then((results) => {
+                    res.send({success: true, data: results});
+                }).catch((err) => {
+                    res.send({success: false, message: err});
+                });
+        })
+        .catch((err) => {
             res.send({success: false, message: err});
         });
 }

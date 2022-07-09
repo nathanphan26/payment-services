@@ -1,64 +1,57 @@
 const userModel = require('../models/users.js');
 
+const { sendSuccessResponse, sendErrorResponse } = require('../utils/responseUtils.js');
+
 // GET ALL USERS
 const getUsers = (req, res) => {
-    const getAllUsersPromise = userModel.getAllUsers();
-    getAllUsersPromise.then((results) => {
-        res.send(results);
-    }).catch((err) => {
-        res.send({success: false, message: err});
-    });    
+    userModel.getAllUsers()
+        .then(results => sendSuccessResponse(res, null, results, 200))
+        .catch(err => sendErrorResponse(res, err, null, 400));
 }
 
 // CREATE USER
 const createUser = (req, res) => {
+    const { body } = req;
+
+    // Check Fields
+    if (!body.first_name) sendErrorResponse(res, 'First Name is Required...', null, 400)
+    if (!body.last_name) sendErrorResponse(res, 'Last Name is Required...', null, 400)
+    if (!body.username) sendErrorResponse(res, 'Username is Required...', null, 400)
+
     const user = new userModel(req.body);
-    if (!req.body.first_name || !req.body.last_name || !req.body.username) {
-        res.send({success: false, message: "Please fill in all fields"});
-    } else {
-        const createUserPromise = userModel.createUser(user);
-        createUserPromise.then((results) => {
-            res.send({success: true, message: 'User Created Successfully', id: results.insertId});
-        }).catch((err) => {
-            res.send({success: false, message: err});
-        });
-    }
+
+    userModel.createUser(user)
+        .then((results) => sendSuccessResponse(res, 'User Created Successfully...', results, 200))
+        .catch((err) => sendErrorResponse(res, err, null, 400));
 }
 
 // GET USER BY ID
 const getUserById = (req, res) => {
     const { id } = req.params;
-    const getUserByIdPromise = userModel.getUserById(id);
 
-    getUserByIdPromise.then((results) => {
-        res.send(results);
-    }).catch((err) => {
-        res.send({success: false, message: err});
-    });
+    userModel.getUserById(id)
+        .then((results) => sendSuccessResponse(res, null, results, 200))
+        .catch((err) => sendErrorResponse(res, err, null, 400));
 }
 
 // UPDATE USER BY ID
 const updateUserById = (req, res) => {
     const { id } = req.params;
-    const updateUserByIdPromise = userModel.updateUserById(id, req.body);
+    const message = 'User Updated Successfully';
 
-    updateUserByIdPromise.then((results) => {
-        res.send({success: true, message: 'User Updated Successfully', data: results})
-    }).catch((err) => {
-        res.send({success: false, message: err});
-    });
+    userModel.updateUserById(id, req.body)
+        .then((results) => sendSuccessResponse(res, message, results, 200))
+        .catch((err) => sendErrorResponse(res, err, null, 400));
 }
 
 // DELETE USER BY ID
 const deleteUserById = (req, res) => {
     const { id } = req.params;
-    const deleteUserByIdPromise = userModel.deleteUserById(id);
+    const message = 'User Deleted Successfully';
 
-    deleteUserByIdPromise.then((results) => {
-        res.send({success: true, message: 'User Deleted Successfully', data: results})
-    }).catch((err) => {
-        res.send({success: false, message: err});
-    });
+    userModel.deleteUserById(id)
+        .then((results) => sendSuccessResponse(res, message, results, 200))
+        .catch((err) => sendErrorResponse(res, err, null, 400));
 }
 
 module.exports = { getUsers, createUser, getUserById, updateUserById, deleteUserById };  
